@@ -12,24 +12,31 @@ import { useGameStore } from '../store/gameStore';
 import { playerApi } from '../services/api';
 import { useThrottle } from '../hooks/useThrottle';
 import { useDialogueStore } from '../store/dialogueStore';
-import { CAMPUS_ZONES } from '../data/maps';
+import { CAMPUS_ZONES, getFloorFromY } from '../data/maps';
+import { findGroundY, SPAWN_PROBE_HEIGHT } from '../world/spawn';
+import { resolveMovement, updateStamina, JUMP_SPEED, JUMP_COST, STAMINA_MAX } from '../world/playerMovement';
 
 const SYNC_INTERVAL_MS = 2000;
 const FALL_RESET_Y = -12;
 const PLAYER_HEIGHT_OFFSET = 1.1; // capsule centre above the floor (feet on baseY)
-const SPEED = 5;
 const GRAVITY = -30;
 
 export default function PlayerController() {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const didSetInitialPosition = useRef(false);
   const verticalVelocity = useRef(0);
+  const stamina = useRef(STAMINA_MAX);
+  const wasSprinting = useRef(false);
+  const jumpQueued = useRef(false);
+  // Last position confirmed standing on ground — respawn target after a fall.
+  const lastSafePos = useRef<{ x: number; y: number; z: number } | null>(null);
   const controllerRef = useRef<KinematicCharacterController | null>(null);
-  const { world } = useRapier();
+  const { world, rapier } = useRapier();
 
-  const { playerPosition, playerId, setPlayerPosition, setPlayerRotation, setSyncStatus } = useGameStore();
+  const { playerPosition, playerId, setPlayerPosition, setPlayerKinematics, setPlayerRotation, setSyncStatus } =
+    useGameStore();
 
-  const keys = useRef({ w: false, a: false, s: false, d: false });
+  const keys = useRef({ w: false, a: false, s: false, d: false, shift: false });
 
   const syncToServer = useThrottle(
     useCallback(
@@ -67,11 +74,15 @@ export default function PlayerController() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (key in keys.current) keys.current[key as keyof typeof keys.current] = true;
+      if (key === 'shift') keys.current.shift = true;
+      else if (key in keys.current) keys.current[key as 'w' | 'a' | 's' | 'd'] = true;
+      // Jump is edge-triggered: queue once per press, ignore auto-repeat.
+      if ((key === ' ' || e.code === 'Space') && !e.repeat) jumpQueued.current = true;
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (key in keys.current) keys.current[key as keyof typeof keys.current] = false;
+      if (key === 'shift') keys.current.shift = false;
+      else if (key in keys.current) keys.current[key as 'w' | 'a' | 's' | 'd'] = false;
     };
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -81,18 +92,27 @@ export default function PlayerController() {
     };
   }, []);
 
+  // Seat the player's feet on the real floor under (x, z); fall back to targetY.
+  const groundedSpawnY = useCallback(
+    (x: number, z: number, targetY: number) => {
+      const collider = rigidBodyRef.current?.collider(0) ?? null;
+      const surfaceY = findGroundY(rapier, world, x, z, targetY + SPAWN_PROBE_HEIGHT, collider);
+      return (surfaceY ?? targetY) + PLAYER_HEIGHT_OFFSET;
+    },
+    [rapier, world],
+  );
+
   // Initial placement + external teleports (zone transitions) jump the body.
   useEffect(() => {
     const rb = rigidBodyRef.current;
     if (!rb || !playerPosition) return;
 
     if (!didSetInitialPosition.current) {
-      rb.setTranslation(
-        { x: playerPosition.x, y: Math.max(playerPosition.y, 0) + PLAYER_HEIGHT_OFFSET, z: playerPosition.z },
-        true,
-      );
+      const y = groundedSpawnY(playerPosition.x, playerPosition.z, Math.max(playerPosition.y, 0));
+      rb.setTranslation({ x: playerPosition.x, y, z: playerPosition.z }, true);
       didSetInitialPosition.current = true;
       verticalVelocity.current = 0;
+      lastSafePos.current = { x: playerPosition.x, y: y - PLAYER_HEIGHT_OFFSET, z: playerPosition.z };
       return;
     }
 
@@ -101,13 +121,12 @@ export default function PlayerController() {
     const dy = playerPosition.y + PLAYER_HEIGHT_OFFSET - cur.y;
     const dz = playerPosition.z - cur.z;
     if (dx * dx + dy * dy + dz * dz > 9) {
-      rb.setTranslation(
-        { x: playerPosition.x, y: playerPosition.y + PLAYER_HEIGHT_OFFSET, z: playerPosition.z },
-        true,
-      );
+      const y = groundedSpawnY(playerPosition.x, playerPosition.z, playerPosition.y);
+      rb.setTranslation({ x: playerPosition.x, y, z: playerPosition.z }, true);
       verticalVelocity.current = 0;
+      lastSafePos.current = { x: playerPosition.x, y: y - PLAYER_HEIGHT_OFFSET, z: playerPosition.z };
     }
-  }, [playerPosition]);
+  }, [playerPosition, groundedSpawnY]);
 
   useFrame((_, delta) => {
     const rb = rigidBodyRef.current;
@@ -119,10 +138,11 @@ export default function PlayerController() {
     const dt = Math.min(delta, 0.05); // clamp to avoid tunnelling on hitches
     const pos = rb.translation();
 
-    // Fall recovery.
+    // Fall recovery: return to the last safe spot, else the zone spawn point.
     if (pos.y < FALL_RESET_Y) {
       const { currentZone } = useGameStore.getState();
-      const spawn = CAMPUS_ZONES[currentZone]?.spawnPoint ?? CAMPUS_ZONES.main_building_1f.spawnPoint;
+      const spawn =
+        lastSafePos.current ?? CAMPUS_ZONES[currentZone]?.spawnPoint ?? CAMPUS_ZONES.main_building_1f.spawnPoint;
       rb.setTranslation({ x: spawn.x, y: spawn.y + PLAYER_HEIGHT_OFFSET, z: spawn.z }, true);
       verticalVelocity.current = 0;
       setPlayerPosition({ x: spawn.x, y: spawn.y, z: spawn.z });
@@ -142,14 +162,38 @@ export default function PlayerController() {
       if (keys.current.a) inputX -= 1;
       if (keys.current.d) inputX += 1;
     }
+    const moving = inputX !== 0 || inputZ !== 0;
+
+    // Resolve walk/run/sprint tier and update stamina.
+    const { mode, speed } = resolveMovement({
+      moving,
+      shift: keys.current.shift && !locked,
+      stamina: stamina.current,
+      wasSprinting: wasSprinting.current,
+    });
+    stamina.current = updateStamina(stamina.current, mode, dt);
+    // Apply external stamina deltas (consumables / rewards) into the ref.
+    const staminaDelta = useGameStore.getState().consumePendingStaminaDelta();
+    if (staminaDelta !== 0) {
+      stamina.current = Math.max(0, Math.min(STAMINA_MAX, stamina.current + staminaDelta));
+    }
+    wasSprinting.current = mode === 'sprint';
 
     const forward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw));
     const right = new THREE.Vector3(Math.cos(cameraYaw), 0, -Math.sin(cameraYaw));
     const move = forward.multiplyScalar(-inputZ).add(right.multiplyScalar(inputX));
     if (move.lengthSq() > 0) {
-      move.normalize().multiplyScalar(SPEED);
+      move.normalize().multiplyScalar(speed);
       setPlayerRotation(Math.atan2(move.x, move.z));
     }
+
+    // Jump: edge-triggered, only when grounded and with enough stamina.
+    const groundedNow = controller.computedGrounded();
+    if (jumpQueued.current && !locked && groundedNow && stamina.current >= JUMP_COST) {
+      verticalVelocity.current = JUMP_SPEED;
+      stamina.current = Math.max(0, stamina.current - JUMP_COST);
+    }
+    jumpQueued.current = false;
 
     // Gravity (integrated; reset when grounded).
     verticalVelocity.current += GRAVITY * dt;
@@ -158,7 +202,8 @@ export default function PlayerController() {
     controller.computeColliderMovement(collider, desired);
     const corrected = controller.computedMovement();
 
-    if (controller.computedGrounded() && verticalVelocity.current < 0) {
+    const grounded = controller.computedGrounded();
+    if (grounded && verticalVelocity.current < 0) {
       verticalVelocity.current = 0;
     }
 
@@ -167,7 +212,21 @@ export default function PlayerController() {
 
     // Store the floor-level (feet) position so spawnPoints/camera stay consistent.
     const storePos = { x: next.x, y: next.y - PLAYER_HEIGHT_OFFSET, z: next.z };
-    setPlayerPosition(storePos);
+
+    // Remember the spot whenever standing on the ground (not mid-jump).
+    if (grounded && verticalVelocity.current <= 0) {
+      lastSafePos.current = storePos;
+    }
+
+    // One batched store write per frame for all live kinematics.
+    setPlayerKinematics({
+      playerPosition: storePos,
+      velocity: { x: move.x, y: verticalVelocity.current, z: move.z },
+      grounded,
+      currentFloor: getFloorFromY(storePos.y),
+      movementMode: mode,
+      stamina: Math.round(stamina.current),
+    });
     syncToServer(storePos);
   });
 

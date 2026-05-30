@@ -1,7 +1,9 @@
 import { useGameStore } from '../store/gameStore';
 
 export default function HUD() {
-  const { playerName, health, stamina } = useGameStore();
+  const { playerName, health, stamina, staminaMax, movementMode } = useGameStore();
+  const staminaPct = staminaMax > 0 ? (stamina / staminaMax) * 100 : 0;
+  const staminaColor = movementMode === 'sprint' ? 'bg-amber-400' : 'bg-green-500';
 
   return (
     <div className="absolute top-0 left-0 w-full p-4 pointer-events-none">
@@ -19,15 +21,18 @@ export default function HUD() {
         <div>
           <div className="flex justify-between text-sm">
             <span>Stamina</span>
-            <span>{stamina}/100</span>
+            <span>{Math.round(stamina)}/{staminaMax}</span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2.5">
-            <div className="bg-green-500 h-2.5 rounded-full transition-all" style={{ width: `${stamina}%` }}></div>
+            <div
+              className={`${staminaColor} h-2.5 rounded-full transition-all`}
+              style={{ width: `${staminaPct}%` }}
+            ></div>
           </div>
         </div>
       </div>
       <div className="mt-3 pt-2 border-t border-white/20 text-xs text-gray-300">
-        [I] Inventory • [E] Interact
+        [I] Inventory • [M] Map • [E] Interact
       </div>
     </div>
   );
