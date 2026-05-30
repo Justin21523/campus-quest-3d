@@ -11,7 +11,15 @@ export {
 export {
   ITEM_DEFINITIONS,
   getItemById,
+  getItemsByType,
+  COLLECTIBLE_ITEM_IDS,
 } from './items.js';
+export {
+  NPC_DEFINITIONS,
+  DAY_PHASES,
+  getNpcById,
+  getNpcsAt,
+} from './npcs.js';
 
 export type {
   FurniturePlacement,
@@ -33,4 +41,12 @@ export type {
 export type {
   ItemDefinition,
   ItemType,
+  ItemRarity,
+  ItemEffect,
 } from './items.js';
+export type {
+  NpcDefinition,
+  NpcDialogueLine,
+  NpcScheduleEntry,
+  DayPhase,
+} from './npcs.js';

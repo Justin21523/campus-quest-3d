@@ -3,7 +3,7 @@ import { useInventoryStore } from '../store/inventoryStore';
 import { getItemById } from '@campus-quest/game-data';
 
 export default function InventoryPanel() {
-  const { slots, isOpen, toggleInventory } = useInventoryStore();
+  const { slots, isOpen, toggleInventory, useItem } = useInventoryStore();
 
   if (!isOpen) return null;
 
@@ -26,12 +26,15 @@ export default function InventoryPanel() {
           {Array.from({ length: 20 }).map((_, i) => {
             const slot = slots[i];
             const item = slot ? getItemById(slot.itemId) : null;
+            const usable = item?.type === 'consumable';
 
             return (
               <div
                 key={i}
-                className={`aspect-square rounded-lg border-2 flex items-center justify-center relative group cursor-default
+                onClick={() => usable && slot && useItem(slot.itemId)}
+                className={`aspect-square rounded-lg border-2 flex items-center justify-center relative group
                   ${item ? 'border-indigo-500/70 bg-indigo-950/40' : 'border-gray-700 bg-gray-800/50'}
+                  ${usable ? 'cursor-pointer hover:border-emerald-400' : 'cursor-default'}
                 `}
               >
                 {item && (
@@ -47,7 +50,8 @@ export default function InventoryPanel() {
                       <div className="bg-gray-950 border border-gray-600 rounded px-3 py-2 text-xs whitespace-nowrap shadow-xl">
                         <div className="text-indigo-300 font-bold">{item.name}</div>
                         <div className="text-gray-400 mt-0.5">{item.description}</div>
-                        <div className="text-gray-500 mt-0.5 uppercase">{item.type}</div>
+                        <div className="text-gray-500 mt-0.5 uppercase">{item.type.replace('_', ' ')}</div>
+                        {usable && <div className="text-emerald-400 mt-0.5">Click to use</div>}
                       </div>
                     </div>
                   </>

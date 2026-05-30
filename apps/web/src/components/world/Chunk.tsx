@@ -4,12 +4,18 @@ import { useFrame } from '@react-three/fiber';
 import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { generateChunk } from '../../world/town-generator';
+import { generateChunkCollectibles } from '../../world/collectibles';
+import { useCollectibleStore } from '../../store/collectibleStore';
 import OutdoorProp from '../architecture/OutdoorProps';
 import TownBuilding from './TownBuilding';
+import PickupItem from '../PickupItem';
 
 /** Renders one streamed town chunk: ground collider, streets, props, buildings. */
 export default function Chunk({ cx, cz }: { cx: number; cz: number }) {
   const data = useMemo(() => generateChunk(cx, cz), [cx, cz]);
+  const collectibles = useMemo(() => generateChunkCollectibles(cx, cz), [cx, cz]);
+  const collect = useCollectibleStore((s) => s.collect);
+  const collectedIds = useCollectibleStore((s) => s.collectedIds);
   const groupRef = useRef<THREE.Group>(null);
   const t = useRef(0);
 
@@ -56,6 +62,19 @@ export default function Chunk({ cx, cz }: { cx: number; cz: number }) {
       {data.buildings.map((b) => (
         <TownBuilding key={b.id} placement={b} />
       ))}
+
+      {/* Hidden collectibles (skip ones already picked up) */}
+      {collectibles
+        .filter((c) => !collectedIds.includes(c.id))
+        .map((c) => (
+          <PickupItem
+            key={c.id}
+            position={[c.x, 0.6, c.z]}
+            itemId={c.itemId}
+            quantity={1}
+            onPickedUp={() => collect(c.id)}
+          />
+        ))}
     </group>
   );
 }
