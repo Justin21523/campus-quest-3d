@@ -1,32 +1,32 @@
 // apps/web/src/components/Scene3D.tsx
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Text, Stats } from '@react-three/drei';
-import { useRef, useEffect, useState } from 'react';
+import { Stats, Sky } from '@react-three/drei';
+import { useRef, useState } from 'react';
 import * as THREE from 'three';
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
+import { getNpcsAt } from '@campus-quest/game-data';
 import PlayerController from './PlayerController';
 import FollowCamera from './FollowCamera';
-import { useInteraction } from '../hooks/useInteraction';
-import { useDialogueStore, type DialogueLine } from '../store/dialogueStore';
 import { useGameStore } from '../store/gameStore';
+import { useClockStore } from '../store/clockStore';
+import NpcCharacter from './world/NpcCharacter';
 import QuestTrigger from './QuestTrigger';
 import PickupItem from './PickupItem';
 import CampusMap from './architecture/CampusMap';
-import { Sky } from '@react-three/drei';
 
-// NPC dialogue data (will move to game-data package later)
-const NPC_DIALOGUES: Record<string, DialogueLine[]> = {
-  'Librarian Alice': [
-    { speaker: 'Alice', text: "Welcome to the Starbridge Library! Have you noticed anything... strange lately?" },
-    { speaker: 'Alice', text: "Some books have been disappearing from the restricted section. The system shows they were never checked out." },
-    { speaker: 'Alice', text: "If you're looking for clues about the missing semester, start by restoring the catalog marker nearby.", questId: 'q_library_sort' },
-  ],
-  'Club President Bob': [
-    { speaker: 'Bob', text: "Hey! You must be the new transfer student. Perfect timing!" },
-    { speaker: 'Bob', text: "Our club room's electronic lock has been glitching since last week. I think someone tampered with the access logs." },
-    { speaker: 'Bob', text: "Can you help me investigate? There might be a mini-game puzzle to bypass the corrupted security system." },
-  ],
-};
+/** Renders the NPCs scheduled into the current zone at the current day-phase. */
+function NpcSpawner() {
+  const currentZone = useGameStore((s) => s.currentZone);
+  const phase = useClockStore((s) => s.phase);
+  const npcs = getNpcsAt(currentZone, phase);
+  return (
+    <>
+      {npcs.map((npc) => (
+        <NpcCharacter key={npc.id} npc={npc} position={npc.schedule[phase].position} />
+      ))}
+    </>
+  );
+}
 
 function WorldGround() {
   return (
@@ -37,64 +37,6 @@ function WorldGround() {
         <meshStandardMaterial color="#5f7f52" roughness={0.9} />
       </mesh>
     </RigidBody>
-  );
-}
-
-// NPC Component (Static placeholder)
-function NPC({ position, name }: { position: [number, number, number]; name: string }) {
-  const vecPos = new THREE.Vector3(...position);
-  const openDialogue = useDialogueStore((s) => s.openDialogue);
-  const { setNearbyInteractable, setInteracting } = useGameStore();
-
-  const inRange = useInteraction({
-    targetPosition: vecPos,
-    radius: 3,
-    onEnter: () => setNearbyInteractable(`Talk to ${name}`),
-    onExit: () => setNearbyInteractable(null),
-  });
-
-  // Handle E key press
-  useEffect(() => {
-    if (!inRange) return;
-
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'e') {
-        const dialogues = NPC_DIALOGUES[name];
-        if (dialogues) {
-          setInteracting(true);
-          openDialogue(name, dialogues);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [inRange, name, openDialogue, setInteracting]);
-
-  // Reset interaction lock when dialogue closes
-  const isOpen = useDialogueStore((s) => s.isOpen);
-  useEffect(() => {
-    if (!isOpen) setInteracting(false);
-  }, [isOpen, setInteracting]);
-
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.3, 0.8, 4, 8]} />
-        <meshStandardMaterial color={inRange ? '#34d399' : '#10b981'} />
-      </mesh>
-      <Text
-        position={[0, 1.5, 0]}
-        fontSize={0.3}
-        color={inRange ? '#fbbf24' : 'white'}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.02}
-        outlineColor="#000000"
-      >
-        {name}
-      </Text>
-    </group>
   );
 }
 
@@ -151,9 +93,8 @@ export default function Scene3D() {
         <PlayerController />
       </Physics>
 
-      {/* Non-physics entities */}
-      <NPC position={[-3, 0, -2]} name="Librarian Alice" />
-      <NPC position={[4, 0, 1]} name="Club President Bob" />
+      {/* Non-physics entities — NPCs scheduled into the current zone/phase */}
+      <NpcSpawner />
       <InteractionMarker position={[0, 1.5, -3]} />
       {/* Quest Triggers */}
       <QuestTrigger

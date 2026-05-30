@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getQuestById } from '@campus-quest/game-data';
-import { useInventoryStore } from './inventoryStore';
+import { grantReward } from '../world/reward';
+import { useFriendshipStore } from './friendshipStore';
 
 export type QuestStatus = 'available' | 'active' | 'completed';
 
@@ -52,13 +53,14 @@ export const useQuestStore = create<QuestState>((set, get) => ({
     );
     if (questId) {
       updateQuestStatus(questId, 'completed');
-      // Grant quest rewards
+      // Grant quest rewards through the central reward system.
       const questDef = getQuestById(questId);
-      if (questDef?.rewardItemIds) {
-        const { addItem } = useInventoryStore.getState();
-        questDef.rewardItemIds.forEach((itemId) => {
-          addItem(itemId);
-        });
+      if (questDef?.rewardItemIds?.length) {
+        grantReward({ items: questDef.rewardItemIds.map((id) => ({ id })) });
+      }
+      // Completing an NPC's quest is a big friendship boost for that NPC.
+      if (questDef?.npcId) {
+        useFriendshipStore.getState().addFriendship(questDef.npcId, 25);
       }
     }
     set({ activeMiniGame: null });
