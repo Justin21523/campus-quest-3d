@@ -422,12 +422,130 @@ export const ROOM_TEMPLATES: Record<string, RoomDefinition> = {
     wallColor: '#fef3c7',
     ceilingColor: '#fffbeb',
   },
+
+  // --- Themed campus templates (library / academic / club buildings) ---
+  // Walls are left empty: the floor generator rebuilds each room's walls with a
+  // doorway onto the corridor, so template walls are ignored for placed rooms.
+  study_hall: {
+    id: 'study_hall',
+    type: 'library',
+    width: 12,
+    depth: 9,
+    height: ROOM_HEIGHT,
+    walls: [],
+    furniture: [
+      { type: 'desk', x: -3, z: -2, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'desk', x: 0, z: -2, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'desk', x: 3, z: -2, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'desk', x: -3, z: 1.5, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'desk', x: 0, z: 1.5, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'desk', x: 3, z: 1.5, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'chair', x: -3, z: -1.1, rotation: Math.PI },
+      { type: 'chair', x: 0, z: -1.1, rotation: Math.PI },
+      { type: 'chair', x: 3, z: -1.1, rotation: Math.PI },
+      { type: 'bookshelf', x: -5, z: 0, rotation: Math.PI / 2 },
+      { type: 'bookshelf', x: 5, z: 0, rotation: -Math.PI / 2 },
+    ],
+    floorColor: '#8b7355',
+    wallColor: '#f0ead6',
+    ceilingColor: '#fffaf0',
+  },
+
+  archive_room: {
+    id: 'archive_room',
+    type: 'library',
+    width: 10,
+    depth: 8,
+    height: ROOM_HEIGHT,
+    walls: [],
+    furniture: [
+      { type: 'bookshelf', x: -3.5, z: -2.5, rotation: 0 },
+      { type: 'bookshelf', x: -3.5, z: 0, rotation: 0 },
+      { type: 'bookshelf', x: -3.5, z: 2.5, rotation: 0 },
+      { type: 'bookshelf', x: 0, z: -2.5, rotation: 0 },
+      { type: 'bookshelf', x: 0, z: 0, rotation: 0 },
+      { type: 'bookshelf', x: 0, z: 2.5, rotation: 0 },
+      { type: 'bookshelf', x: 3.5, z: -2.5, rotation: Math.PI },
+      { type: 'bookshelf', x: 3.5, z: 0, rotation: Math.PI },
+      { type: 'counter', x: 0, z: 3.5, rotation: 0, scale: [3, 1.1, 0.8] },
+    ],
+    floorColor: '#7c6748',
+    wallColor: '#ece3cf',
+    ceilingColor: '#fffaf0',
+  },
+
+  lecture_hall: {
+    id: 'lecture_hall',
+    type: 'classroom',
+    width: 13,
+    depth: 10,
+    height: ROOM_HEIGHT,
+    walls: [],
+    furniture: [
+      { type: 'terminal', x: 0, z: -4.2, rotation: 0, scale: [6, 1.8, 0.1] },
+      { type: 'counter', x: 0, z: -3, rotation: 0, scale: [3, 1.1, 0.8] },
+      { type: 'desk', x: -3.5, z: 0, rotation: 0, scale: [3, 0.75, 0.7] },
+      { type: 'desk', x: 3.5, z: 0, rotation: 0, scale: [3, 0.75, 0.7] },
+      { type: 'desk', x: -3.5, z: 2.5, rotation: 0, scale: [3, 0.75, 0.7] },
+      { type: 'desk', x: 3.5, z: 2.5, rotation: 0, scale: [3, 0.75, 0.7] },
+      { type: 'chair', x: -3.5, z: 0.9, rotation: Math.PI },
+      { type: 'chair', x: 3.5, z: 0.9, rotation: Math.PI },
+      { type: 'chair', x: -3.5, z: 3.4, rotation: Math.PI },
+      { type: 'chair', x: 3.5, z: 3.4, rotation: Math.PI },
+    ],
+    floorColor: '#cdbb98',
+    wallColor: '#f5f0e8',
+    ceilingColor: '#ffffff',
+  },
+
+  club_room: {
+    id: 'club_room',
+    type: 'lounge',
+    width: 10,
+    depth: 8,
+    height: ROOM_HEIGHT,
+    walls: [],
+    furniture: [
+      { type: 'desk', x: -2.5, z: -1.5, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'desk', x: 2.5, z: -1.5, rotation: 0, scale: [1.4, 0.75, 0.9] },
+      { type: 'chair', x: -2.5, z: -0.6, rotation: Math.PI },
+      { type: 'chair', x: 2.5, z: -0.6, rotation: Math.PI },
+      { type: 'counter', x: 0, z: -3, rotation: 0, scale: [3.5, 1.1, 0.8] },
+      { type: 'bookshelf', x: -4, z: 1.5, rotation: Math.PI / 2 },
+      { type: 'bookshelf', x: 4, z: 1.5, rotation: -Math.PI / 2 },
+      { type: 'locker', x: 0, z: 3, rotation: 0, scale: [2, 1.6, 0.6] },
+    ],
+    floorColor: '#b59f7d',
+    wallColor: '#f1eadb',
+    ceilingColor: '#ffffff',
+  },
+
+  art_room: {
+    id: 'art_room',
+    type: 'lounge',
+    width: 11,
+    depth: 9,
+    height: ROOM_HEIGHT,
+    walls: [],
+    furniture: [
+      { type: 'desk', x: -3, z: -2, rotation: 0, scale: [1.2, 0.9, 1.2] },
+      { type: 'desk', x: 0, z: -2, rotation: 0, scale: [1.2, 0.9, 1.2] },
+      { type: 'desk', x: 3, z: -2, rotation: 0, scale: [1.2, 0.9, 1.2] },
+      { type: 'desk', x: -3, z: 1.5, rotation: 0, scale: [1.2, 0.9, 1.2] },
+      { type: 'desk', x: 3, z: 1.5, rotation: 0, scale: [1.2, 0.9, 1.2] },
+      { type: 'counter', x: 0, z: -3.5, rotation: 0, scale: [3, 1.1, 0.8] },
+      { type: 'bookshelf', x: -4.5, z: 1.5, rotation: Math.PI / 2 },
+    ],
+    floorColor: '#c8b6a0',
+    wallColor: '#f6efe6',
+    ceilingColor: '#ffffff',
+  },
 };
 
 // Enlarge every room and spread its furniture proportionally so floors feel
 // spacious. Furniture *sizes* stay realistic; only footprints and positions
 // scale. Applied once at module load (the generator + archetypes read these).
-export const ROOM_SCALE = 1.4;
+export const ROOM_SCALE = 1.55;
 for (const t of Object.values(ROOM_TEMPLATES)) {
   t.width = Math.round(t.width * ROOM_SCALE * 10) / 10;
   t.depth = Math.round(t.depth * ROOM_SCALE * 10) / 10;

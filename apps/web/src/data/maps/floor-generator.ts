@@ -73,7 +73,7 @@ export interface GeneratedBuilding {
 
 const DEFAULT_CORRIDOR_W = 6;
 const ROOM_GAP = 0.8; // gap between stacked rooms in a column
-const FRONT_MARGIN = 6; // open entrance hall before the first room
+const FRONT_MARGIN = 8; // open entrance hall before the first room
 const STAIRWELL_DEPTH = 9; // reserved corridor length for the staircase
 const BACK_MARGIN = 2;
 const WINDOW_HEIGHT = 1.4;

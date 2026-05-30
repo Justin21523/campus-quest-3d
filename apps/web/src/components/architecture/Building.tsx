@@ -15,7 +15,6 @@ interface Props {
 }
 
 const WALL_T = 0.3;
-const STAIR_RUN = 6;
 const DOOR_WIDTH = 3.6;
 const DOOR_HEIGHT = 2.8;
 
@@ -46,6 +45,10 @@ function ExteriorWall({
  */
 export default function Building({ building }: Props) {
   const { footprint, floorHeight, stairwell, stairWidth, floors, shellColor, roofColor, corridorWidth } = building;
+
+  // A flight spans exactly one floor-to-floor gap; deriving the run from
+  // floorHeight keeps stairs reaching the upper slab for any building.
+  const STAIR_RUN = floorHeight;
 
   const n = floors.length;
   const H = n * floorHeight;

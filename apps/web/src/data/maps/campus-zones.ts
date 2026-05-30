@@ -2,6 +2,8 @@
 import { ROOM_TEMPLATES } from './room-templates';
 import type { OutdoorAreaDefinition } from './outdoor-templates';
 import { generateBuilding, type BuildingSpec, type GeneratedBuilding } from './floor-generator';
+import { FLOOR_HEIGHT } from './constants';
+import { CAMPUS_BUILDINGS } from './buildings';
 
 // ---------------------------------------------------------------------------
 // Dynamic, data-driven building model.
@@ -9,15 +11,12 @@ import { generateBuilding, type BuildingSpec, type GeneratedBuilding } from './f
 // computes positions, doorways and a connecting corridor. The number of floors
 // and rooms is not hardcoded — add a floor / room spec and everything (shell,
 // slabs, staircases, footprint) follows.
+//
+// Floor constants live in `constants.ts` (so `buildings.ts` can share them
+// without a circular import); they are re-exported here for existing importers.
 // ---------------------------------------------------------------------------
 
-export const FLOOR_HEIGHT = 6;
-
-/** World Y of a floor's walking surface, derived from its level. */
-export function floorBaseY(level: number): number {
-  return level * FLOOR_HEIGHT;
-}
-
+export { FLOOR_HEIGHT, floorBaseY, getFloorFromY } from './constants';
 export type { GeneratedBuilding } from './floor-generator';
 
 const T = ROOM_TEMPLATES;
@@ -104,6 +103,33 @@ export const CAMPUS_ZONES: Record<string, ZoneDefinition> = {
     ambientLightIntensity: 0.8,
     spawnPoint: { x: 0, y: 0, z: 8 },
     streamedTown: true,
+  },
+
+  // Themed campus buildings (their interiors come from the building registry).
+  // Spawn just inside each front entrance, on the corridor axis.
+  library_building: {
+    id: 'library_building',
+    name: 'Starbridge Library',
+    ambientLightIntensity: 0.6,
+    fogColor: '#e8e0d0',
+    spawnPoint: { x: 0, y: 0, z: CAMPUS_BUILDINGS.library_building.footprint.depth / 2 - 3 },
+    building: CAMPUS_BUILDINGS.library_building,
+  },
+  academic_building: {
+    id: 'academic_building',
+    name: 'Science Hall',
+    ambientLightIntensity: 0.6,
+    fogColor: '#e6ecf2',
+    spawnPoint: { x: 0, y: 0, z: CAMPUS_BUILDINGS.academic_building.footprint.depth / 2 - 3 },
+    building: CAMPUS_BUILDINGS.academic_building,
+  },
+  club_building: {
+    id: 'club_building',
+    name: 'Club House',
+    ambientLightIntensity: 0.6,
+    fogColor: '#efe2e8',
+    spawnPoint: { x: 0, y: 0, z: CAMPUS_BUILDINGS.club_building.footprint.depth / 2 - 3 },
+    building: CAMPUS_BUILDINGS.club_building,
   },
 
   // Transient zone for on-entry generated town interiors (the building itself

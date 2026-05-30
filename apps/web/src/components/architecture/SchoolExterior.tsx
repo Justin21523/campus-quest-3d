@@ -13,13 +13,18 @@ interface Props {
   floorHeight?: number;
   shellColor?: string;
   roofColor?: string;
+  /** Sign text above the entrance. */
+  label?: string;
+  /** Render the perimeter fence + yard (main school only by default). */
+  showFence?: boolean;
 }
 
 /**
- * A static (non-enterable) school facade shown in the outdoor campus zone so
+ * A static (non-enterable) building facade shown in the outdoor campus zone so
  * stepping outside reveals a real building + grounds. The player enters via the
- * "Enter Building" portal, not by walking through. The body extends along -z
- * from the front door at the given position.
+ * matching "Enter ..." portal, not by walking through. The body extends along
+ * -z from the front door at the given position. Reused for the main school and
+ * the themed library / academic / club buildings via props.
  */
 export default function SchoolExterior({
   position = [0, 0, 0],
@@ -29,6 +34,8 @@ export default function SchoolExterior({
   floorHeight = 5,
   shellColor = '#d9cbb2',
   roofColor = '#7c5c3b',
+  label = 'STARBRIDGE HIGH',
+  showFence = true,
 }: Props) {
   const H = floors * floorHeight;
   const halfW = width / 2;
@@ -111,11 +118,11 @@ export default function SchoolExterior({
         <meshStandardMaterial color="#1e3a5f" />
       </mesh>
       <Text position={[0, 3.3, 0.2]} fontSize={0.55} color="#ffd479" anchorX="center" anchorY="middle" maxWidth={6}>
-        STARBRIDGE HIGH
+        {label}
       </Text>
 
       {/* Perimeter fence around the front yard with a gate gap at centre */}
-      <Fence width={width + 18} front={26} depth={depth + 12} />
+      {showFence && <Fence width={width + 18} front={26} depth={depth + 12} />}
     </group>
   );
 }

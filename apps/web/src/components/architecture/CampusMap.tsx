@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { CAMPUS_ZONES, getConnectionsFromZone } from '../../data/maps';
+import { CAMPUS_BUILDING_LAYOUTS } from '../../data/maps/buildings';
 import ZonePortal from './ZonePortal';
 import Building from './Building';
 import SchoolExterior from './SchoolExterior';
@@ -35,6 +36,20 @@ export default function CampusMap() {
         <group>
           <ChunkManager />
           <SchoolExterior position={[0, 0, 0]} />
+          {/* Themed campus buildings (library / academic / club) with entrances */}
+          {CAMPUS_BUILDING_LAYOUTS.map((b) => (
+            <SchoolExterior
+              key={b.zoneId}
+              position={b.exteriorPosition}
+              width={b.width}
+              depth={b.depth}
+              floors={b.floors}
+              shellColor={b.shellColor}
+              roofColor={b.roofColor}
+              label={b.label}
+              showFence={false}
+            />
+          ))}
         </group>
       )}
 
