@@ -52,6 +52,34 @@ export const QUEST_DEFINITIONS: Record<string, QuestDefinition> = {
     ],
     rewardItemIds: ['library_keycard'],
   },
+
+  q_cross_school_exchange: {
+    id: 'q_cross_school_exchange',
+    title: 'Inter-School Exchange',
+    description:
+      'Deliver the student council greeting from Starbridge to Riverside High. Take the bus to Riverside and find Hana.',
+    status: 'available',
+    npcId: 'mei',
+    zoneId: 'riverside_outdoor',
+    objectives: [
+      {
+        id: 'accept-from-mei',
+        description: 'Accept the exchange errand from Mei at Starbridge.',
+        completed: false,
+      },
+      {
+        id: 'travel-to-riverside',
+        description: 'Fast-travel to Riverside via a bus stop or the map.',
+        completed: false,
+      },
+      {
+        id: 'greet-hana',
+        description: 'Find Hana in the Riverside district and deliver the greeting.',
+        completed: false,
+      },
+    ],
+    rewardItemIds: ['choco_box'],
+  },
 };
 
 export function getQuestById(id: string): QuestDefinition | undefined {

@@ -8,6 +8,9 @@ import { useGameStore } from '../store/gameStore';
 import { useExplorationStore } from '../store/explorationStore';
 import { useClockStore } from '../store/clockStore';
 import { CAMPUS_ZONES } from '../data/maps';
+import { FAST_TRAVEL_DESTINATIONS, getDistrict } from '../data/maps/schools';
+import { useTravelStore } from '../store/travelStore';
+import { useFastTravel } from '../hooks/useFastTravel';
 import { getPoisForZone, type Poi } from '../data/maps/pois';
 import { getNpcsAt } from '@campus-quest/game-data';
 import { CHUNK_SIZE, chunkKey, worldToChunk } from '../world/chunks';
@@ -101,6 +104,8 @@ export default function MapPanel() {
   const interior = useGameStore((s) => s.interior);
   const phase = useClockStore((s) => s.phase);
   const discoveredChunks = useExplorationStore((s) => s.discoveredChunks);
+  const isUnlocked = useTravelStore((s) => s.isUnlocked);
+  const { travelTo } = useFastTravel();
 
   const building: GeneratedBuilding | null =
     currentZone === 'interior' ? interior : CAMPUS_ZONES[currentZone]?.building ?? null;
@@ -145,6 +150,13 @@ export default function MapPanel() {
     label: n.name,
   }));
   const pois = [...getPoisForZone(currentZone), ...npcPois];
+
+  // Map-based fast travel: jump to any unlocked district other than the one
+  // you're currently in (instant — no bus stop needed once visited).
+  const hereDistrict = getDistrict(currentZone)?.id;
+  const fastTravelTargets = FAST_TRAVEL_DESTINATIONS.filter(
+    (d) => d.id !== hereDistrict && isUnlocked(d.id),
+  );
 
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 pointer-events-auto">
@@ -244,6 +256,25 @@ export default function MapPanel() {
           <span><span className="text-gray-200">▢</span> Building</span>
           <span className="text-gray-500">Dark = unexplored • [M] close</span>
         </div>
+
+        {/* Map-based fast travel to visited districts */}
+        {fastTravelTargets.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-400">🚌 Fast travel:</span>
+            {fastTravelTargets.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => {
+                  setMapOpen(false);
+                  travelTo(d);
+                }}
+                className="px-3 py-1 rounded text-sm bg-blue-700 hover:bg-blue-600 text-white"
+              >
+                {d.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

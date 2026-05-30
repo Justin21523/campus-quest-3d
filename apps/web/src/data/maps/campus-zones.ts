@@ -4,6 +4,7 @@ import type { OutdoorAreaDefinition } from './outdoor-templates';
 import { generateBuilding, type BuildingSpec, type GeneratedBuilding } from './floor-generator';
 import { FLOOR_HEIGHT } from './constants';
 import { CAMPUS_BUILDINGS } from './buildings';
+import { DISTRICT_BUILDINGS, SCHOOL_DISTRICTS } from './schools';
 
 // ---------------------------------------------------------------------------
 // Dynamic, data-driven building model.
@@ -130,6 +131,42 @@ export const CAMPUS_ZONES: Record<string, ZoneDefinition> = {
     fogColor: '#efe2e8',
     spawnPoint: { x: 0, y: 0, z: CAMPUS_BUILDINGS.club_building.footprint.depth / 2 - 3 },
     building: CAMPUS_BUILDINGS.club_building,
+  },
+
+  // --- Other school districts (separate streamed-town zones) ---------------
+  // Reached by fast travel (bus stop / map). Each has a distinct fog/light mood
+  // and one generated school building reached via its front-door portal.
+  riverside_outdoor: {
+    id: 'riverside_outdoor',
+    name: SCHOOL_DISTRICTS.riverside_outdoor.name,
+    ambientLightIntensity: SCHOOL_DISTRICTS.riverside_outdoor.ambientLightIntensity,
+    fogColor: SCHOOL_DISTRICTS.riverside_outdoor.fogColor,
+    spawnPoint: SCHOOL_DISTRICTS.riverside_outdoor.spawn,
+    streamedTown: true,
+  },
+  riverside_school: {
+    id: 'riverside_school',
+    name: 'Riverside High',
+    ambientLightIntensity: 0.6,
+    fogColor: '#e6eef2',
+    spawnPoint: { x: 0, y: 0, z: DISTRICT_BUILDINGS.riverside_school.footprint.depth / 2 - 3 },
+    building: DISTRICT_BUILDINGS.riverside_school,
+  },
+  northhill_outdoor: {
+    id: 'northhill_outdoor',
+    name: SCHOOL_DISTRICTS.northhill_outdoor.name,
+    ambientLightIntensity: SCHOOL_DISTRICTS.northhill_outdoor.ambientLightIntensity,
+    fogColor: SCHOOL_DISTRICTS.northhill_outdoor.fogColor,
+    spawnPoint: SCHOOL_DISTRICTS.northhill_outdoor.spawn,
+    streamedTown: true,
+  },
+  northhill_school: {
+    id: 'northhill_school',
+    name: 'Northhill Science School',
+    ambientLightIntensity: 0.6,
+    fogColor: '#eef2e7',
+    spawnPoint: { x: 0, y: 0, z: DISTRICT_BUILDINGS.northhill_school.footprint.depth / 2 - 3 },
+    building: DISTRICT_BUILDINGS.northhill_school,
   },
 
   // Transient zone for on-entry generated town interiors (the building itself

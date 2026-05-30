@@ -1,6 +1,7 @@
 // apps/web/src/data/maps/zone-connections.ts
 import { MAIN_BUILDING_ENTRANCE_Z } from './campus-zones';
 import { CAMPUS_BUILDINGS, CAMPUS_BUILDING_LAYOUTS } from './buildings';
+import { SCHOOL_DISTRICTS, DISTRICT_BUILDINGS } from './schools';
 
 export interface ZoneConnection {
   id: string;
@@ -82,7 +83,45 @@ const THEMED_CONNECTIONS: ZoneConnection[] = CAMPUS_BUILDING_LAYOUTS.flatMap((la
   ];
 });
 
-export const ZONE_CONNECTIONS: ZoneConnection[] = [...MAIN_CONNECTIONS, ...THEMED_CONNECTIONS];
+// Each new district's school sits at its outdoor origin (like the main school),
+// so its front-door portals mirror the main-building pair, one set per district.
+const DISTRICT_CONNECTIONS: ZoneConnection[] = Object.values(SCHOOL_DISTRICTS)
+  .filter((d) => !d.home)
+  .flatMap((d) => {
+    const halfDepth = DISTRICT_BUILDINGS[d.buildingZoneId].footprint.depth / 2;
+    return [
+      // Outdoor → school (portal at the door; spawn just inside)
+      {
+        id: `conn_${d.id}_to_${d.buildingZoneId}`,
+        fromZone: d.id,
+        toZone: d.buildingZoneId,
+        portalPosition: { x: 0, y: 0, z: 0 },
+        portalSize: { width: 3, height: 2.8 },
+        portalRotation: Math.PI,
+        spawnPoint: { x: 0, y: 0, z: halfDepth - 3 },
+        spawnRotation: Math.PI,
+        label: `Enter ${d.name} High`,
+      },
+      // School → outdoor (portal just inside the door; spawn outside)
+      {
+        id: `conn_${d.buildingZoneId}_to_${d.id}`,
+        fromZone: d.buildingZoneId,
+        toZone: d.id,
+        portalPosition: { x: 0, y: 0, z: halfDepth - 1.5 },
+        portalSize: { width: 3, height: 2.8 },
+        portalRotation: 0,
+        spawnPoint: d.spawn,
+        spawnRotation: 0,
+        label: 'Go Outside',
+      },
+    ];
+  });
+
+export const ZONE_CONNECTIONS: ZoneConnection[] = [
+  ...MAIN_CONNECTIONS,
+  ...THEMED_CONNECTIONS,
+  ...DISTRICT_CONNECTIONS,
+];
 
 export function getConnectionsFromZone(zoneId: string): ZoneConnection[] {
   return ZONE_CONNECTIONS.filter((c) => c.fromZone === zoneId);

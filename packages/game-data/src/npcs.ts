@@ -87,8 +87,9 @@ export const NPC_DEFINITIONS: Record<string, NpcDefinition> = {
     dialogue: [
       { speaker: 'Mei', text: 'Oh, hi! Are you new here too? This campus is huge — I keep getting lost.' },
       { speaker: 'Mei', text: 'If you find any map fragments around town, they say collecting them reveals a secret spot!' },
+      { speaker: 'Mei', text: 'Hey, the inter-school council wants a greeting delivered to Riverside High. Take the bus there and find Hana — could you?', questId: 'q_cross_school_exchange' },
     ],
-    availableQuests: [],
+    availableQuests: ['q_cross_school_exchange'],
     favoriteItems: ['choco_box', 'star_coin'],
   },
 
@@ -106,6 +107,45 @@ export const NPC_DEFINITIONS: Record<string, NpcDefinition> = {
     dialogue: [
       { speaker: 'Mr. Sato', text: 'The Science Hall is open for self-study. Mind the equipment.' },
       { speaker: 'Mr. Sato', text: 'If you ever bring me a corrupted data fragment, I might be able to analyze it.' },
+    ],
+    availableQuests: [],
+    favoriteItems: ['data_fragment', 'coffee_can'],
+  },
+
+  // --- Other-school NPCs (reached by fast travel) --------------------------
+  hana: {
+    id: 'hana',
+    name: 'Hana',
+    role: 'Riverside Student',
+    personality: 'Warm and welcoming, proud of her riverside school.',
+    homeZone: 'riverside_outdoor',
+    schedule: {
+      morning: { zone: 'riverside_outdoor', position: [-6, 0, 12] },
+      afternoon: { zone: 'riverside_school', position: [0, 0, 6] },
+      evening: { zone: 'riverside_outdoor', position: [8, 0, 14] },
+    },
+    dialogue: [
+      { speaker: 'Hana', text: 'Welcome to Riverside High! You came all the way from Starbridge?' },
+      { speaker: 'Hana', text: 'Thanks for delivering the council greeting — tell Mei we say hi back!' },
+    ],
+    availableQuests: [],
+    favoriteItems: ['flower_bouquet', 'choco_box'],
+  },
+
+  kenji: {
+    id: 'kenji',
+    name: 'Mr. Kenji',
+    role: 'Northhill Teacher',
+    personality: 'Inquisitive researcher who loves cross-school projects.',
+    homeZone: 'northhill_outdoor',
+    schedule: {
+      morning: { zone: 'northhill_school', position: [0, 0, 6] },
+      afternoon: { zone: 'northhill_outdoor', position: [6, 0, 12] },
+      evening: { zone: 'northhill_school', position: [2, 0, 9] },
+    },
+    dialogue: [
+      { speaker: 'Mr. Kenji', text: 'Ah, a visitor from another district! Northhill Science welcomes curious minds.' },
+      { speaker: 'Mr. Kenji', text: 'If you bring me an interesting data fragment, we can run an analysis together.' },
     ],
     availableQuests: [],
     favoriteItems: ['data_fragment', 'coffee_can'],

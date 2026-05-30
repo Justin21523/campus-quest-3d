@@ -15,6 +15,7 @@ import InventoryPanel from './components/InventoryPanel';
 import { useInventoryStore } from './store/inventoryStore';
 import TransitionOverlay from './components/TransitionOverlay';
 import MapPanel from './components/MapPanel';
+import FastTravelMenu from './components/FastTravelMenu';
 import ClockHud from './components/ClockHud';
 import { useDialogueStore } from './store/dialogueStore';
 
@@ -107,6 +108,7 @@ function App() {
       <DialogueBox />
       <InventoryPanel />
       <MapPanel />
+      <FastTravelMenu />
       <QuestNotification />
       <UIOverlay healthStatus={healthStatus} isLoading={isLoading} />
       <TransitionOverlay />
