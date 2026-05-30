@@ -1,122 +1,103 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// apps/web/src/App.tsx
+import { Suspense, lazy, useState, useEffect } from 'react';
+import Scene3D from './components/Scene3D';
+import UIOverlay from './components/UIOverlay';
+import type { HealthCheckResponse, PlayerState } from '@campus-quest/shared-types';
+import HUD from './components/HUD';
+import DebugPanel from './components/DebugPanel';
+import { playerApi } from './services/api';
+import { useGameStore } from './store/gameStore';
+import  InteractionPrompt  from './components/InteractionPrompt'
+import DialogueBox from './components/DialogueBox';
+import QuestNotification from './components/QuestNotification';
+import QuestTracker from './components/QuestTracker';
+import InventoryPanel from './components/InventoryPanel';
+import { useInventoryStore } from './store/inventoryStore';
+import TransitionOverlay from './components/TransitionOverlay';
 
-function App() {
-  const [count, setCount] = useState(0)
+const MinigameOverlay = lazy(() => import('./components/MinigameOverlay'));
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+async function fetchHealthStatus(): Promise<HealthCheckResponse | null> {
+  try {
+    const response = await fetch('/api/health', {
+      headers: { Accept: 'application/json' },
+    });
+    const contentType = response.headers.get('content-type') ?? '';
 
-      <div className="ticks"></div>
+    if (!response.ok || !contentType.includes('application/json')) {
+      return null;
+    }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    return await response.json() as HealthCheckResponse;
+  } catch {
+    return null;
+  }
 }
 
-export default App
+function App() {
+  const [healthStatus, setHealthStatus] = useState<HealthCheckResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
+  const nearbyInteractable = useGameStore((s) => s.nearbyInteractable);
+  const toggleInventory = useInventoryStore((s) => s.toggleInventory);
+  
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        // 1. Check health
+        const healthData = await fetchHealthStatus();
+        setHealthStatus(healthData);
+
+        // 2. Init/Fetch player state
+        if (healthData?.status === 'ok') {
+          try {
+            const player: PlayerState = await playerApi.init('student_001', 'Freshman');
+            setPlayerPosition(player.position);
+          } catch (error) {
+            console.warn('Player sync unavailable:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize app:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initialize();
+  }, [setPlayerPosition]);
+  
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'i') {
+        toggleInventory();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [toggleInventory]);
+  
+  return (
+    <div className="w-screen h-screen relative">
+      {/* 3D Canvas */}
+      <Scene3D />
+      <HUD />
+      <QuestTracker />
+      <DebugPanel />
+      {/* UI Overlay */}
+      <InteractionPrompt
+        visible={!!nearbyInteractable}
+        label={nearbyInteractable || ''}
+      />
+      <Suspense fallback={null}>
+        <MinigameOverlay />
+      </Suspense>
+      <DialogueBox />
+      <InventoryPanel />
+      <QuestNotification />
+      <UIOverlay healthStatus={healthStatus} isLoading={isLoading} />
+      <TransitionOverlay />
+    </div>
+  );
+}
+
+export default App;
