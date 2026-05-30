@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGameStore } from '../../store/gameStore';
+import { useExplorationStore } from '../../store/explorationStore';
 import { chunkKey, chunksInRadius, worldToChunk, type ChunkCoord } from '../../world/chunks';
 import Chunk from './Chunk';
 
@@ -18,6 +19,14 @@ export default function ChunkManager() {
   );
   const [active, setActive] = useState<ChunkCoord[]>(() => chunksInRadius(start.cx, start.cz));
   const lastKey = useRef(chunkKey(start.cx, start.cz));
+  const markDiscovered = useExplorationStore((s) => s.markDiscovered);
+
+  // Reveal the starting area immediately.
+  const didInitDiscovery = useRef(false);
+  if (!didInitDiscovery.current) {
+    didInitDiscovery.current = true;
+    markDiscovered(start.cx, start.cz);
+  }
 
   useFrame(() => {
     const p = useGameStore.getState().playerPosition;
@@ -26,6 +35,7 @@ export default function ChunkManager() {
     if (key !== lastKey.current) {
       lastKey.current = key;
       setActive(chunksInRadius(cx, cz));
+      markDiscovered(cx, cz);
     }
   });
 

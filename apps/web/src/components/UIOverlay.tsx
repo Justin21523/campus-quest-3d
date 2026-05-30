@@ -2,6 +2,8 @@
 import type { HealthCheckResponse } from '@campus-quest/shared-types';
 import { Activity, Package, Map, Bug } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useGameStore } from '../store/gameStore';
+import { useInventoryStore } from '../store/inventoryStore';
 
 interface UIOverlayProps {
   healthStatus: HealthCheckResponse | null;
@@ -9,6 +11,9 @@ interface UIOverlayProps {
 }
 
 export default function UIOverlay({ healthStatus, isLoading }: UIOverlayProps) {
+  const toggleInventory = useInventoryStore((s) => s.toggleInventory);
+  const toggleMap = useGameStore((s) => s.toggleMap);
+
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4">
       {/* Top HUD */}
@@ -36,10 +41,18 @@ export default function UIOverlay({ healthStatus, isLoading }: UIOverlayProps) {
       {/* Bottom Action Bar */}
       <div className="flex justify-center pointer-events-auto">
         <div className="bg-black/60 backdrop-blur-md p-2 rounded-xl border border-white/10 flex gap-2">
-          <button className="p-3 hover:bg-white/10 rounded-lg transition text-white" title="Inventory">
+          <button
+            onClick={toggleInventory}
+            className="p-3 hover:bg-white/10 rounded-lg transition text-white"
+            title="Inventory [I]"
+          >
             <Package size={24} />
           </button>
-          <button className="p-3 hover:bg-white/10 rounded-lg transition text-white" title="Map">
+          <button
+            onClick={toggleMap}
+            className="p-3 hover:bg-white/10 rounded-lg transition text-white"
+            title="Map [M]"
+          >
             <Map size={24} />
           </button>
           <button className="p-3 hover:bg-white/10 rounded-lg transition text-white" title="Quests">

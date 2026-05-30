@@ -14,6 +14,9 @@ import QuestTracker from './components/QuestTracker';
 import InventoryPanel from './components/InventoryPanel';
 import { useInventoryStore } from './store/inventoryStore';
 import TransitionOverlay from './components/TransitionOverlay';
+import MapPanel from './components/MapPanel';
+import ClockHud from './components/ClockHud';
+import { useDialogueStore } from './store/dialogueStore';
 
 const MinigameOverlay = lazy(() => import('./components/MinigameOverlay'));
 
@@ -40,6 +43,8 @@ function App() {
   const setPlayerPosition = useGameStore((s) => s.setPlayerPosition);
   const nearbyInteractable = useGameStore((s) => s.nearbyInteractable);
   const toggleInventory = useInventoryStore((s) => s.toggleInventory);
+  const toggleMap = useGameStore((s) => s.toggleMap);
+  const setMapOpen = useGameStore((s) => s.setMapOpen);
   
   useEffect(() => {
     const initialize = async () => {
@@ -68,19 +73,27 @@ function App() {
   
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'i') {
+      const key = e.key.toLowerCase();
+      if (key === 'i') {
         toggleInventory();
+      } else if (key === 'm') {
+        // Don't open the map mid-dialogue; always allow closing it.
+        const dialogueOpen = useDialogueStore.getState().isOpen;
+        if (!dialogueOpen || useGameStore.getState().isMapOpen) toggleMap();
+      } else if (key === 'escape') {
+        setMapOpen(false);
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [toggleInventory]);
+  }, [toggleInventory, toggleMap, setMapOpen]);
   
   return (
     <div className="w-screen h-screen relative">
       {/* 3D Canvas */}
       <Scene3D />
       <HUD />
+      <ClockHud />
       <QuestTracker />
       <DebugPanel />
       {/* UI Overlay */}
@@ -93,6 +106,7 @@ function App() {
       </Suspense>
       <DialogueBox />
       <InventoryPanel />
+      <MapPanel />
       <QuestNotification />
       <UIOverlay healthStatus={healthStatus} isLoading={isLoading} />
       <TransitionOverlay />
