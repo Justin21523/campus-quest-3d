@@ -10,6 +10,7 @@ import { useClockStore } from '../store/clockStore';
 import { CAMPUS_ZONES } from '../data/maps';
 import { FAST_TRAVEL_DESTINATIONS, getDistrict } from '../data/maps/schools';
 import { useTravelStore } from '../store/travelStore';
+import { useEventStore } from '../store/eventStore';
 import { useFastTravel } from '../hooks/useFastTravel';
 import { getPoisForZone, type Poi } from '../data/maps/pois';
 import { getNpcsAt } from '@campus-quest/game-data';
@@ -105,6 +106,7 @@ export default function MapPanel() {
   const phase = useClockStore((s) => s.phase);
   const discoveredChunks = useExplorationStore((s) => s.discoveredChunks);
   const isUnlocked = useTravelStore((s) => s.isUnlocked);
+  const activeEvents = useEventStore((s) => s.activeEvents);
   const { travelTo } = useFastTravel();
 
   const building: GeneratedBuilding | null =
@@ -243,6 +245,23 @@ export default function MapPanel() {
               .map((p) => (
                 <PoiMarker key={p.id} sx={sx(p.x)} sy={sy(p.z)} poi={p} />
               ))}
+
+            {/* Random-event ★ markers (outdoor, current zone only) */}
+            {!building &&
+              activeEvents
+                .filter((e) => e.zone === currentZone)
+                .map((e) => (
+                  <text
+                    key={e.id}
+                    x={sx(e.x)}
+                    y={sy(e.z) + 5}
+                    fontSize={16}
+                    fill="#f59e0b"
+                    textAnchor="middle"
+                  >
+                    ★
+                  </text>
+                ))}
 
             {/* Player (only when the viewed floor matches the player's floor) */}
             {(!building || selectedFloor === currentFloor) && <PlayerMarker sx={CX} sy={CY} rot={playerRot} />}

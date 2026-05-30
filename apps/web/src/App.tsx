@@ -16,6 +16,8 @@ import { useInventoryStore } from './store/inventoryStore';
 import TransitionOverlay from './components/TransitionOverlay';
 import MapPanel from './components/MapPanel';
 import FastTravelMenu from './components/FastTravelMenu';
+import EventSpawner from './components/world/EventSpawner';
+import EventNotification from './components/EventNotification';
 import ClockHud from './components/ClockHud';
 import { useDialogueStore } from './store/dialogueStore';
 
@@ -109,6 +111,8 @@ function App() {
       <InventoryPanel />
       <MapPanel />
       <FastTravelMenu />
+      <EventSpawner />
+      <EventNotification />
       <QuestNotification />
       <UIOverlay healthStatus={healthStatus} isLoading={isLoading} />
       <TransitionOverlay />

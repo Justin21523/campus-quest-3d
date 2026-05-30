@@ -4,6 +4,7 @@
 // here so reward handling stays in one place.
 import { useInventoryStore } from '../store/inventoryStore';
 import { useGameStore } from '../store/gameStore';
+import { useFriendshipStore } from '../store/friendshipStore';
 
 export interface RewardItem {
   id: string;
@@ -14,6 +15,8 @@ export interface Reward {
   items?: RewardItem[];
   /** Immediate stamina restore. */
   stamina?: number;
+  /** Friendship boost for a specific NPC. */
+  friendship?: { npcId: string; amount: number };
 }
 
 /** Apply a reward to the player's inventory / state. */
@@ -24,5 +27,8 @@ export function grantReward(reward: Reward): void {
   }
   if (reward.stamina) {
     useGameStore.getState().addStamina(reward.stamina);
+  }
+  if (reward.friendship) {
+    useFriendshipStore.getState().addFriendship(reward.friendship.npcId, reward.friendship.amount);
   }
 }

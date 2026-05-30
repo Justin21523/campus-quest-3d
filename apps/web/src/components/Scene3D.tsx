@@ -13,6 +13,23 @@ import NpcCharacter from './world/NpcCharacter';
 import QuestTrigger from './QuestTrigger';
 import PickupItem from './PickupItem';
 import CampusMap from './architecture/CampusMap';
+import EventMarker from './world/EventMarker';
+import { useEventStore } from '../store/eventStore';
+
+/** Renders the live random events located in the current zone. */
+function EventMarkers() {
+  const currentZone = useGameStore((s) => s.currentZone);
+  const activeEvents = useEventStore((s) => s.activeEvents);
+  return (
+    <>
+      {activeEvents
+        .filter((e) => e.zone === currentZone)
+        .map((e) => (
+          <EventMarker key={e.id} event={e} />
+        ))}
+    </>
+  );
+}
 
 /** Renders the NPCs scheduled into the current zone at the current day-phase. */
 function NpcSpawner() {
@@ -95,6 +112,7 @@ export default function Scene3D() {
 
       {/* Non-physics entities — NPCs scheduled into the current zone/phase */}
       <NpcSpawner />
+      <EventMarkers />
       <InteractionMarker position={[0, 1.5, -3]} />
       {/* Quest Triggers */}
       <QuestTrigger
