@@ -4,16 +4,24 @@ import { useFrame } from '@react-three/fiber';
 import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { generateChunk } from '../../world/town-generator';
+import { generateChunkTraffic } from '../../world/traffic';
+import { CHUNK_SIZE } from '../../world/chunks';
 import { generateChunkCollectibles } from '../../world/collectibles';
 import { useCollectibleStore } from '../../store/collectibleStore';
 import OutdoorProp from '../architecture/OutdoorProps';
 import TownBuilding from './TownBuilding';
 import PickupItem from '../PickupItem';
+import Vehicle from './Vehicle';
+import Pedestrian from './Pedestrian';
+import { Sidewalk, Crosswalk, TrafficLight } from './TrafficProps';
 
 /** Renders one streamed town chunk: ground collider, streets, props, buildings. */
 export default function Chunk({ cx, cz }: { cx: number; cz: number }) {
   const data = useMemo(() => generateChunk(cx, cz), [cx, cz]);
+  const traffic = useMemo(() => generateChunkTraffic(cx, cz), [cx, cz]);
   const collectibles = useMemo(() => generateChunkCollectibles(cx, cz), [cx, cz]);
+  const originX = cx * CHUNK_SIZE;
+  const originZ = cz * CHUNK_SIZE;
   const collect = useCollectibleStore((s) => s.collect);
   const collectedIds = useCollectibleStore((s) => s.collectedIds);
   const groupRef = useRef<THREE.Group>(null);
@@ -56,6 +64,23 @@ export default function Chunk({ cx, cz }: { cx: number; cz: number }) {
       {/* Props (trees/benches/lamps/...) */}
       {data.props.map((p, i) => (
         <OutdoorProp key={`prop-${i}`} type={p.type} x={p.x} z={p.z} />
+      ))}
+
+      {/* Ambient city traffic (no physics): sidewalks, crosswalks, lights, movers */}
+      {traffic.sidewalks.map((s, i) => (
+        <Sidewalk key={`sw-${i}`} strip={s} />
+      ))}
+      {traffic.crosswalks.map((c, i) => (
+        <Crosswalk key={`cw-${i}`} patch={c} />
+      ))}
+      {traffic.trafficLights.map((l, i) => (
+        <TrafficLight key={`tl-${i}`} spec={l} />
+      ))}
+      {traffic.vehicles.map((v) => (
+        <Vehicle key={v.id} spec={v} originX={originX} originZ={originZ} />
+      ))}
+      {traffic.pedestrians.map((p) => (
+        <Pedestrian key={p.id} spec={p} originX={originX} originZ={originZ} />
       ))}
 
       {/* Enterable buildings */}
