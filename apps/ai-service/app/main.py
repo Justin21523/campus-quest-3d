@@ -1,17 +1,50 @@
+# apps/ai-service/main.py
 from fastapi import FastAPI
-
-from app.api.health import router as health_router
-from app.api.dialogue import router as dialogue_router
-from app.api.hints import router as hints_router
-from app.api.events import router as events_router
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Dict, Literal
 
 app = FastAPI(
     title="Campus Quest AI Service",
-    description="Python AI service for NPC dialogue, quest hints, and campus event generation.",
-    version="0.1.0",
+    description="AI backend for NPC dialogue, hints, and event generation.",
+    version="0.1.0"
 )
 
-app.include_router(health_router, prefix="/health", tags=["health"])
-app.include_router(dialogue_router, prefix="/dialogue", tags=["dialogue"])
-app.include_router(hints_router, prefix="/hints", tags=["hints"])
-app.include_router(events_router, prefix="/events", tags=["events"])
+class HealthCheckResponse(BaseModel):
+    status: Literal["ok", "error"]
+    service: str
+    timestamp: str
+    model_version: str
+
+@app.get("/health", response_model=HealthCheckResponse)
+async def health_check():
+    """
+    Health check endpoint for the AI service.
+    """
+    return HealthCheckResponse(
+        status="ok",
+        service="campus-quest-ai-service",
+        timestamp=datetime.utcnow().isoformat(),
+        model_version="mock-v1"
+    )
+
+# Placeholder for future AI endpoints
+class DialogueRequest(BaseModel):
+    npc_id: str
+    player_input: str
+    context: Dict
+
+class DialogueResponse(BaseModel):
+    npc_reply: str
+    emotion: str
+
+@app.post("/ai/v1/dialogue/generate", response_model=DialogueResponse)
+async def generate_dialogue(request: DialogueRequest):
+    """
+    Mock endpoint for generating NPC dialogue.
+    Will be replaced with actual LLM integration later.
+    """
+    return DialogueResponse(
+        npc_reply=f"Hello student! You said: '{request.player_input}'. The library system is acting weird today...",
+        emotion="neutral"
+    )
