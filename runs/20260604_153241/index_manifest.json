@@ -1,0 +1,218 @@
+{
+  "run_id": "20260604_153241",
+  "timestamp": "2026-06-04T15:32:41Z",
+  "repository": {
+    "name": "campus-quest-3d",
+    "path": "/home/justin/web-projects/campus-quest-3d",
+    "type": "monorepo",
+    "package_manager": "npm workspaces"
+  },
+  "statistics": {
+    "total_files": 156,
+    "code_files": 136,
+    "config_files": 12,
+    "documentation_files": 5,
+    "docker_files": 3,
+    "language_distribution": {
+      "typescript": 98,
+      "tsx": 28,
+      "python": 8,
+      "javascript": 2,
+      "mjs": 1,
+      "json": 12,
+      "yaml": 2,
+      "md": 5,
+      "css": 1,
+      "html": 1,
+      "txt": 1,
+      "js": 1
+    },
+    "lines_of_code_estimate": 12500,
+    "chunk_count": 0,
+    "embedding_count": 0
+  },
+  "workspaces": {
+    "apps/web": {
+      "type": "frontend",
+      "framework": "React 19 + Three.js (R3F)",
+      "build_tool": "Vite 8",
+      "language": "TypeScript ~6.0.2",
+      "file_count": 82,
+      "key_directories": [
+        "src/components/architecture/",
+        "src/components/world/",
+        "src/components/ui/",
+        "src/store/",
+        "src/world/",
+        "src/data/maps/",
+        "src/services/",
+        "src/phaser/"
+      ],
+      "entry_points": [
+        "main.tsx",
+        "App.tsx",
+        "src/components/Scene3D.tsx",
+        "src/components/PlayerController.tsx"
+      ]
+    },
+    "apps/api": {
+      "type": "backend",
+      "framework": "Express 4 + Mongoose 8",
+      "build_tool": "tsx (dev), tsc (prod)",
+      "language": "TypeScript ~5.7.3",
+      "file_count": 22,
+      "key_directories": [
+        "src/routes/",
+        "src/services/",
+        "src/middleware/",
+        "src/utils/",
+        "src/models/",
+        "src/config/",
+        "src/scripts/"
+      ],
+      "entry_points": [
+        "src/server.ts",
+        "src/app.ts"
+      ]
+    },
+    "apps/ai-service": {
+      "type": "ai-service",
+      "framework": "FastAPI 0.136",
+      "build_tool": "uvicorn",
+      "language": "Python 3.10+",
+      "file_count": 12,
+      "key_directories": [
+        "app/api/",
+        "app/services/",
+        "app/schemas/"
+      ],
+      "entry_points": [
+        "app/main.py"
+      ],
+      "note": "Standalone Python project, not part of npm workspaces"
+    },
+    "packages/shared-types": {
+      "type": "shared-library",
+      "purpose": "Shared TypeScript type definitions",
+      "file_count": 5,
+      "key_files": [
+        "src/index.ts",
+        "src/types/player.ts",
+        "src/types/api.ts",
+        "src/types/game.ts"
+      ]
+    },
+    "packages/game-data": {
+      "type": "shared-library",
+      "purpose": "Game data definitions (items, NPCs, quests)",
+      "file_count": 8,
+      "key_files": [
+        "src/index.ts",
+        "src/items.ts",
+        "src/npcs.ts",
+        "src/quests.ts"
+      ],
+      "note": "maps/ subdirectory is legacy and unused by web app"
+    }
+  },
+  "top_modules_by_importance": [
+    {
+      "module": "apps/web/src/store/gameStore.ts",
+      "reason": "Central state store consumed by nearly all components"
+    },
+    {
+      "module": "apps/web/src/components/PlayerController.tsx",
+      "reason": "Core gameplay loop - movement, physics, camera"
+    },
+    {
+      "module": "apps/web/src/world/town-generator.ts",
+      "reason": "Procedural world generation engine"
+    },
+    {
+      "module": "apps/api/src/services/playerSyncService.ts",
+      "reason": "Server-authoritative state synchronization"
+    },
+    {
+      "module": "apps/web/src/data/maps/campus-zones.ts",
+      "reason": "Zone registry defining all game areas"
+    },
+    {
+      "module": "apps/web/src/components/architecture/CampusMap.tsx",
+      "reason": "Zone-based world rendering orchestrator"
+    },
+    {
+      "module": "apps/ai-service/app/services/llm_service.py",
+      "reason": "LLM integration singleton with RAG"
+    },
+    {
+      "module": "packages/game-data/src/npcs.ts",
+      "reason": "NPC definitions with schedules and dialogue"
+    },
+    {
+      "module": "apps/web/src/store/inventoryStore.ts",
+      "reason": "Inventory management with persistence"
+    },
+    {
+      "module": "apps/web/src/world/playerMovement.ts",
+      "reason": "Movement physics constants and logic"
+    }
+  ],
+  "paths_ignored": [
+    "node_modules/",
+    "dist/",
+    "build/",
+    ".git/",
+    ".venv/",
+    "__pycache__/",
+    "*.lock",
+    "package-lock.json",
+    ".DS_Store",
+    "runs/"
+  ],
+  "known_issues": [
+    {
+      "file": "apps/api/src/server.ts",
+      "issue": "Duplicate app.listen() calls",
+      "severity": "medium"
+    },
+    {
+      "file": "apps/api/src/models/player.ts",
+      "issue": "Unused duplicate legacy router",
+      "severity": "low"
+    },
+    {
+      "file": "packages/game-data/src/maps/",
+      "issue": "Legacy maps directory unused by web app",
+      "severity": "low"
+    },
+    {
+      "file": "apps/api/src/middleware/rateLimit.ts",
+      "issue": "Rate limiters defined but not applied to routes",
+      "severity": "medium"
+    },
+    {
+      "file": "apps/api/src/middleware/auth.ts",
+      "issue": "Auth middleware only used on batch-sync endpoint",
+      "severity": "medium"
+    }
+  ],
+  "artifacts": {
+    "repo_map": "runs/20260604_153241/repo_map.md",
+    "index_manifest": "runs/20260604_153241/index_manifest.json"
+  },
+  "quality_checklist": {
+    "entry_points_identified": true,
+    "key_modules_indexed": true,
+    "chunk_metadata_accurate": "N/A - no chunking performed in this run",
+    "artifacts_saved": true,
+    "no_sensitive_data": true,
+    "chunks_appropriately_sized": "N/A - no chunking performed in this run"
+  },
+  "notes": [
+    "This run performed repository mapping and documentation only. Embedding generation and vector indexing were not executed as no embedding model or vector database was configured.",
+    "The repository uses npm workspaces for TypeScript packages but the AI service is a standalone Python project.",
+    "game-data/maps/ is a legacy directory that is NOT consumed by the web app. The web app uses its own apps/web/src/data/maps/ for procedural generation.",
+    "All source code, comments, and file names are in English per project convention.",
+    "The project has no automated test suite as of this scan."
+  ]
+}

@@ -1,0 +1,153 @@
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  # MongoDB with persistence
+  mongodb:
+    image: mongo:7.0
+    container_name: cq-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-campus}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS:-change_me}
+      MONGO_INITDB_DATABASE: campus_quest
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    ports:
+      - "127.0.0.1:27017:27017"  # Bind to localhost only
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/campus_quest --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js API server
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: cq-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://${MONGO_USER:-campus}:${MONGO_PASS:-change_me}@mongodb:27017/campus_quest?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_prod}
+      QUEST_HMAC_SECRET: ${QUEST_HMAC_SECRET:-change_me_too}
+      AI_SERVICE_URL: http://ai-service:8001
+      SKIP_AUTH: "false"
+    ports:
+      - "4000:4000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:4000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # Python AI service (llama.cpp + RAG)
+  ai-service:
+    build:
+      context: .
+      dockerfile: apps/ai-service/Dockerfile
+    container_name: cq-ai
+    restart: unless-stopped
+    environment:
+      LLM_LLAMA_CPP_BASE_URL: ${LLAMA_CPP_URL:-http://llama-cpp:8080/v1}
+      LLM_ENABLE_RAG_CONTEXT: "true"
+      RAG_PERSIST_DIR: /app/rag_data
+    volumes:
+      - ai_rag_data:/app/rag_data
+      - ${MODEL_PATH:-./models}:/models:ro  # Mount models from host
+    ports:
+      - "8001:8001"
+    depends_on:
+      - llama-cpp
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8001/health || exit 1
+      interval: 20s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # llama.cpp server (GPU inference)
+  llama-cpp:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: cq-llama
+    restart: unless-stopped
+    command: >
+      --model /models/${MODEL_NAME:-qwen2.5-7b-instruct.gguf}
+      --ctx-size 4096
+      --n-gpu-layers 35
+      --parallel 8
+      --flash-attn
+      --host 0.0.0.0
+      --port 8080
+    volumes:
+      - ${MODEL_PATH:-./models}:/models:ro
+    ports:
+      - "127.0.0.1:8080:8080"  # Internal only, accessed by ai-service
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus for metrics scraping
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: cq-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    ports:
+      - "127.0.0.1:9090:9090"  # Bind to localhost
+    depends_on:
+      - api
+
+  # Optional: Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.1.5
+    container_name: cq-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASS:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  mongodb_data:
+  ai_rag_data:
+  prometheus_data:
+  grafana_data:

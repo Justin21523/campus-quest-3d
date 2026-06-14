@@ -1,0 +1,69 @@
+# docker-compose.dev.yml
+# Lightweight local dev environment (no GPU required)
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: cq-db-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: campus_quest
+    volumes:
+      - dev_mongo_data:/data/db
+      - ./docker/mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
+
+  mock-ai:
+    image: python:3.11-slim
+    container_name: cq-ai-mock
+    working_dir: /app
+    command: >
+      sh -c "pip install fastapi uvicorn pydantic httpx &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
+    volumes:
+      - ./apps/ai-service:/app:cached
+    ports:
+      - "8001:8001"
+    environment:
+      PYTHONUNBUFFERED: 1
+
+  api:
+    image: node:20-alpine
+    container_name: cq-api-dev
+    working_dir: /app
+    command: sh -c "npm install && npm run dev:api"
+    volumes:
+      - .:/app:cached
+      - /app/node_modules # Prevent container node_modules from overriding host
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongodb:27017/campus_quest
+      AI_SERVICE_URL: http://mock-ai:8001
+      SKIP_AUTH: "true"
+      JWT_SECRET: dev_secret
+      API_HMAC_SECRET: dev_hmac
+    depends_on:
+      - mongodb
+      - mock-ai
+
+  web:
+    image: node:20-alpine
+    container_name: cq-web-dev
+    working_dir: /app/apps/web
+    command: sh -c "cd /app && npm install && cd apps/web && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - .:/app:cached
+      - /app/apps/web/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_PROXY: http://api:4000
+    depends_on:
+      - api
+
+volumes:
+  dev_mongo_data:
